@@ -1,0 +1,24 @@
+spring:
+  application:
+    name: ticket-rush
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/ticket_rush
+    username: ticket_rush
+    password: ticket_rush
+
+  jpa:
+    hibernate:
+      ddl-auto: update # 개발 초기 단계 한정. 스키마가 안정화되면 Flyway/Liquibase 마이그레이션으로 전환 예정
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+  data:
+    redis:
+      host: localhost
+      port: 6379
+
+server:
+  port: 8080
