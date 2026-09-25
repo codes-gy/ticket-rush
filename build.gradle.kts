@@ -31,12 +31,19 @@ dependencies {
     // Redis (대기열 ZSET, 추후 좌석 선점 TTL/분산 락에 사용 예정)
     implementation("org.springframework.boot:spring-boot-starter-data-redis")
 
+    // 인증 (1단계: 회원가입/로그인 + JWT)
+    implementation("org.springframework.boot:spring-boot-starter-security")
+    implementation("io.jsonwebtoken:jjwt-api:0.12.6")
+    runtimeOnly("io.jsonwebtoken:jjwt-impl:0.12.6")
+    runtimeOnly("io.jsonwebtoken:jjwt-jackson:0.12.6")
+
     // Kotlin 연동
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
     implementation("org.jetbrains.kotlin:kotlin-reflect")
 
     // 테스트
     testImplementation("org.springframework.boot:spring-boot-starter-test")
+    testImplementation("org.springframework.security:spring-security-test")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
 }
 

@@ -22,3 +22,8 @@ spring:
 
 server:
   port: 8080
+
+jwt:
+  # ⚠️ 운영 환경에서는 반드시 환경변수(JWT_SECRET)로 덮어써야 합니다. 아래 값은 로컬 개발 전용입니다.
+  secret: ${JWT_SECRET:local-development-only-secret-key-please-override-me-1234567890}
+  access-token-expiration-ms: 3600000 # 1시간
