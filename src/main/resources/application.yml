@@ -27,3 +27,8 @@ jwt:
   # ⚠️ 운영 환경에서는 반드시 환경변수(JWT_SECRET)로 덮어써야 합니다. 아래 값은 로컬 개발 전용입니다.
   secret: ${JWT_SECRET:local-development-only-secret-key-please-override-me-1234567890}
   access-token-expiration-ms: 3600000 # 1시간
+
+queue:
+  allow-interval-ms: 3000 # 스케줄러가 이 주기(ms)마다 대기열 상위 인원을 입장 허용시킨다
+  allow-batch-size: 5 # 한 번에 입장 허용시키는 인원 수
+  entry-token-ttl-minutes: 5 # 입장 허용 후 좌석 선택 화면에 머물 수 있는 시간

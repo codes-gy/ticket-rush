@@ -61,6 +61,7 @@ src/main/kotlin/com/ticketrush/
 ├── user/                        # 회원/인증 (domain, application, presentation, infrastructure)
 ├── concert/                     # 콘서트(공연) (domain, application, presentation, infrastructure)
 ├── seat/                        # 좌석 (domain, application, presentation, infrastructure)
+├── queue/                       # 대기열 (application, presentation, infrastructure — DB 미영속, Redis만 사용)
 ├── reservation/domain/          # 예약 (엔티티만 존재, 아직 기능 미구현)
 ├── payment/domain/              # 결제 (엔티티만 존재, 아직 기능 미구현)
 └── health/                     # 헬스체크
@@ -74,16 +75,17 @@ src/main/kotlin/com/ticketrush/
 
 ## 현재 진행 상태
 
-`PLANNING.md` 로드맵 기준 **1단계(회원/콘서트/좌석 기본 CRUD) 완료**
+`PLANNING.md` 로드맵 기준 **2단계(대기열 모듈) 완료**
 
 - 회원가입/로그인 (JWT 발급, BCrypt 비밀번호 해시)
 - 콘서트 등록(관리자)/목록·상세 조회(공개)
 - 좌석 일괄 등록(관리자)/조회(공개)
 - `/api/admin/**`는 `ROLE_ADMIN`만 접근 가능하도록 Spring Security로 보호
+- **콘서트별 대기열 진입/순번 조회/이탈** (`waiting-api`의 Redis ZSET 설계를 포팅 및 확장)
 
-아직 대기열, 좌석 선점(동시성 제어), 결제는 구현 전입니다.
+아직 좌석 선점(동시성 제어)과 결제는 구현 전입니다.
 
-### API 목록 (1단계 기준)
+### API 목록
 
 | Method | Endpoint | 인증 |
 | :--- | :--- | :--- |
@@ -92,6 +94,9 @@ src/main/kotlin/com/ticketrush/
 | GET | `/api/concerts` | 불필요 |
 | GET | `/api/concerts/{concertId}` | 불필요 |
 | GET | `/api/concerts/{concertId}/seats` | 불필요 |
+| POST | `/api/queue/{concertId}/enter` | 로그인 필요 |
+| GET | `/api/queue/{concertId}/rank` | 로그인 필요 |
+| DELETE | `/api/queue/{concertId}` | 로그인 필요 |
 | POST | `/api/admin/concerts` | ROLE_ADMIN 필요 |
 | POST | `/api/admin/concerts/{concertId}/seats` | ROLE_ADMIN 필요 |
 
@@ -99,3 +104,17 @@ src/main/kotlin/com/ticketrush/
 > 관리자 기능을 테스트하려면 회원가입 후 DB에서 직접 `role`을 `ADMIN`으로 바꿔주세요.
 > (`UPDATE users SET role = 'ADMIN' WHERE email = '...';`) 최초 관리자 시딩 스크립트는
 > 추후 단계에서 정리할 예정입니다.
+
+### 대기열 동작 방식
+
+1. `POST /api/queue/{concertId}/enter` — Redis ZSET(`queue:{concertId}:wait`)에 등록 (이미 대기
+   중이거나 이미 허용된 상태면 그대로 현재 상태만 반환, 순번을 리셋하지 않음)
+2. 3초마다(`queue.allow-interval-ms`) 스케줄러가 각 콘서트 대기열 상위 5명(`queue.allow-batch-size`)을
+   꺼내서 입장 토큰을 발급 (5분 TTL, `queue.entry-token-ttl-minutes`)
+3. `GET /api/queue/{concertId}/rank` — 대기 중이면 순번을, 허용됐으면 입장 토큰을 반환
+4. 입장 토큰은 3단계(좌석 선점)에서 좌석 선택 화면 접근 권한 검증에 사용될 예정
+
+`waiting-api` 원본 설계와 달리, "입장 허용" 상태를 별도의 Set으로 관리하지 않고 **입장 토큰
+자체의 Redis TTL을 허용 상태의 유일한 근거로 사용**합니다. 원본은 허용 여부를 Set 멤버십으로
+판단했는데, Set 멤버는 개별 TTL을 가질 수 없어서 토큰이 만료된 뒤에도 영원히 "허용됨" 상태로
+남는 문제가 있었습니다.

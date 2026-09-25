@@ -7,8 +7,7 @@ import org.springframework.data.redis.core.RedisTemplate
 import org.springframework.data.redis.serializer.StringRedisSerializer
 
 /**
- * 대기열(Redis ZSET) 구현 시 사용할 RedisTemplate. 현재는 뼈대만 등록해두고,
- * PLANNING.md 2단계(대기열 모듈)에서 실제 순번 관리 로직과 함께 사용한다.
+ * 대기열(Redis ZSET) 구현에 사용하는 RedisTemplate. QueueService가 이 빈을 그대로 사용한다.
  */
 @Configuration
 class RedisConfig {
