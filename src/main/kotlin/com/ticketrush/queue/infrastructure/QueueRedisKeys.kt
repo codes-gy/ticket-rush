@@ -13,11 +13,20 @@ object QueueRedisKeys {
     fun waitKey(concertId: Long): String = "queue:$concertId:wait"
 
     /** 유저별 발급된 입장 토큰. 값 자체가 토큰 문자열이며, TTL이 곧 "허용 상태 유효 기간"이다. */
-    fun userTokenKey(concertId: Long, userId: Long): String = "queue:$concertId:user-token:$userId"
+    fun userTokenKey(concertId: Long, userId: Long): String = userTokenKeyPrefix(concertId) + userId
+
+    /** Lua 스크립트 안에서 userId를 붙여 userTokenKey를 만들 때 사용하는 접두사. */
+    fun userTokenKeyPrefix(concertId: Long): String = "queue:$concertId:user-token:"
 
     /** 토큰 -> "concertId:userId" 역방향 조회. 좌석 선점 API(3단계)가 토큰만으로 사용자를 검증할 때 사용한다. */
-    fun entryTokenKey(token: String): String = "queue:entry-token:$token"
+    fun entryTokenKey(token: String): String = ENTRY_TOKEN_KEY_PREFIX + token
 
-    /** 스케줄러가 매번 전체 콘서트를 스캔하지 않도록, 대기열이 생성된 콘서트 ID만 추적한다. */
+    /** Lua 스크립트 안에서 토큰을 붙여 entryTokenKey를 만들 때 사용하는 접두사. */
+    const val ENTRY_TOKEN_KEY_PREFIX = "queue:entry-token:"
+
+    /**
+     * 스케줄러가 매번 전체 콘서트를 스캔하지 않도록, 대기열이 생성된 콘서트 ID만 추적한다.
+     * 대기열이 비면(스케줄러가 마지막 인원을 꺼내거나 마지막 인원이 이탈하면) 이 Set에서 제거된다.
+     */
     const val ACTIVE_CONCERTS_KEY = "queue:active-concerts"
 }
