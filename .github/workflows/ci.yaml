@@ -21,7 +21,7 @@ jobs:
         ports:
           - 5432:5432
         options: >-
-          --health-cmd pg_isready
+          --health-cmd "pg_isready -U ticket_rush -d ticket_rush"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
@@ -47,11 +47,16 @@ jobs:
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
-        with:
-          gradle-version: '8.10'
 
       - name: Build (without tests)
-        run: gradle build -x test
+        run: ./gradlew build -x test
 
       - name: Test
-        run: gradle test
+        run: ./gradlew test
+
+      - name: Upload test reports
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-reports
+          path: build/reports/tests/test

@@ -26,25 +26,18 @@
 docker compose up -d
 ```
 
-### 2. Gradle Wrapper 생성 (최초 1회)
-이 저장소에는 아직 Gradle Wrapper(`gradlew`)가 커밋되어 있지 않습니다. 로컬에 Gradle이 설치되어
-있다면 아래 명령으로 한 번만 생성해주세요 (이후 `gradlew`, `gradlew.bat`, `gradle/wrapper/` 가
-생성되며, 커밋해두면 다음부터는 이 과정이 필요 없습니다).
-```bash
-gradle wrapper --gradle-version 8.10
-```
-IntelliJ IDEA로 프로젝트를 열면 이 과정 없이도 IDE가 자동으로 처리해줍니다.
-
-### 3. 애플리케이션 실행
+### 2. 애플리케이션 실행
 ```bash
 ./gradlew bootRun
 ```
 기동 후 `http://localhost:8080/health` 로 정상 기동 여부를 확인할 수 있습니다.
 
-### 4. 테스트 실행
+### 3. 테스트 실행
 ```bash
 ./gradlew test
 ```
+테스트는 1번의 PostgreSQL/Redis가 떠 있어야 합니다 (CI에서는 GitHub Actions 서비스 컨테이너로 제공).
+JDK 21 툴체인을 사용하므로 로컬에 JDK 21이 설치되어 있어야 합니다.
 
 ---
 
@@ -113,6 +106,14 @@ src/main/kotlin/com/ticketrush/
    꺼내서 입장 토큰을 발급 (5분 TTL, `queue.entry-token-ttl-minutes`)
 3. `GET /api/queue/{concertId}/rank` — 대기 중이면 순번을, 허용됐으면 입장 토큰을 반환
 4. 입장 토큰은 3단계(좌석 선점)에서 좌석 선택 화면 접근 권한 검증에 사용될 예정
+5. `DELETE /api/queue/{concertId}` — 대기 중이면 대기열에서 빠지고, 이미 허용된 상태면 입장 토큰과
+   토큰 역방향 키(`queue:entry-token:{token}`)를 함께 삭제
+
+등록(허용 여부 확인 + ZADD), 입장 허용(ZPOPMIN + 토큰 저장), 이탈(대기열/토큰 삭제), 상태 조회는 각각
+**Lua 스크립트 하나로 원자적으로 실행**합니다. 여러 명령 사이에 스케줄러나 다른 요청이 끼어들어 "대기열에서는
+빠졌는데 토큰은 없는" 중간 상태가 생기지 않도록 하기 위해서입니다. 대기열이 비면 스케줄러 순회 대상
+(`queue:active-concerts`)에서도 자동으로 제거됩니다. (키 접두사를 스크립트 안에서 조합하므로 단일 Redis
+기준이며, Redis Cluster로 옮길 때는 키에 해시태그가 필요합니다.)
 
 `waiting-api` 원본 설계와 달리, "입장 허용" 상태를 별도의 Set으로 관리하지 않고 **입장 토큰
 자체의 Redis TTL을 허용 상태의 유일한 근거로 사용**합니다. 원본은 허용 여부를 Set 멤버십으로
