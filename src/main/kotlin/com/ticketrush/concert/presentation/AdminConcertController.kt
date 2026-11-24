@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 
-/** 관리자 전용 API. SecurityConfig에서 /api/admin/** 는 ROLE_ADMIN만 접근 가능하도록 제한되어 있다. */
+/** 관리자 전용 API. SecurityConfig에서 `/api/admin` 하위 전체 경로는 ROLE_ADMIN만 접근 가능하도록 제한되어 있다. */
 @RestController
 @RequestMapping("/api/admin/concerts")
 class AdminConcertController(
