@@ -26,25 +26,18 @@
 docker compose up -d
 ```
 
-### 2. Gradle Wrapper 생성 (최초 1회)
-이 저장소에는 아직 Gradle Wrapper(`gradlew`)가 커밋되어 있지 않습니다. 로컬에 Gradle이 설치되어
-있다면 아래 명령으로 한 번만 생성해주세요 (이후 `gradlew`, `gradlew.bat`, `gradle/wrapper/` 가
-생성되며, 커밋해두면 다음부터는 이 과정이 필요 없습니다).
-```bash
-gradle wrapper --gradle-version 8.10
-```
-IntelliJ IDEA로 프로젝트를 열면 이 과정 없이도 IDE가 자동으로 처리해줍니다.
-
-### 3. 애플리케이션 실행
+### 2. 애플리케이션 실행
 ```bash
 ./gradlew bootRun
 ```
 기동 후 `http://localhost:8080/health` 로 정상 기동 여부를 확인할 수 있습니다.
 
-### 4. 테스트 실행
+### 3. 테스트 실행
 ```bash
 ./gradlew test
 ```
+테스트는 1번의 PostgreSQL/Redis가 떠 있어야 합니다 (CI에서는 GitHub Actions 서비스 컨테이너로 제공).
+JDK 21 툴체인을 사용하므로 로컬에 JDK 21이 설치되어 있어야 합니다.
 
 ---
 
